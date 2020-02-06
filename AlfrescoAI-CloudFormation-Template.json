@@ -1,0 +1,218 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "AWS CloudFormation Template for AWS AI Services",
+    "Resources": {
+        "S3Bucket": {
+            "Type": "AWS::S3::Bucket",
+            "Properties": {
+                "BucketName": { "Ref" : "BucketName" }
+            },
+            "DeletionPolicy": "Delete",
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "f7fd1310-8ca9-4f95-a008-ef4cafd9fc19"
+                }
+            }
+        },
+        "AICrossAccountRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "AssumeRolePolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": [
+                                    "ec2.amazonaws.com"
+                                ]
+                            },
+                            "Action": [
+                                "sts:AssumeRole"
+                            ]
+                        },
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "AWS": [{"Fn::Join":["",["arn:aws:iam::",{ "Ref" : "AlfrescoAccountID" },":root"]]}]
+                            },
+                            "Action": "sts:AssumeRole",
+                            "Condition": {
+                                "StringEquals": {
+                                    "sts:ExternalId": { "Ref" : "AlfrescoExternalID" }
+                                }
+                            }
+                        }
+                    ]
+                },
+                "Path": "/",
+                "Policies": [
+                    {
+                        "PolicyName": "AICrossAccountPolicy",
+                        "PolicyDocument": {
+                            "Version": "2012-10-17",
+                            "Statement": [
+                                {
+                                    "Effect": "Allow",
+                                    "Action": [
+                                        "s3:*"
+                                    ],
+                                    "Resource": [{"Fn::Join":["",["arn:aws:s3:::",{ "Ref" : "BucketName" },"/*"]]}]
+                                },
+                                {
+                                    "Effect": "Allow",
+                                    "Action": [
+                                        "rekognition:*",
+                                        "comprehend:*",
+                                        "textract:*"
+                                    ],
+                                    "Resource": "*"
+                                }
+                            ]
+                        }
+                    }
+                ]
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "88d6f1f6-ec2f-4a33-8a10-b53d863c58da"
+                }
+            }
+        },
+        "AIComprehendAsyncRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "AssumeRolePolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": [
+                                    "comprehend.amazonaws.com"
+                                ]
+                            },
+                            "Action": [
+                                "sts:AssumeRole"
+                            ]
+                        }
+                    ]
+                },
+                "Path": "/",
+                "Policies": [
+                    {
+                        "PolicyName": "AIComprehendAsyncPolicy",
+                        "PolicyDocument": {
+                            "Version": "2012-10-17",
+                            "Statement": [
+                                {
+                                    "Effect": "Allow",
+                                    "Action": [
+                                        "s3:GetObject",
+                                        "s3:ListBucket",
+                                        "s3:PutObject",
+                                        "s3:DeleteObject"
+                                    ],
+                                    "Resource": [{"Fn::Join":["",["arn:aws:s3:::",{ "Ref" : "BucketName" },"/*"]]}]
+                                },
+                                {
+                                    "Effect": "Allow",
+                                    "Action": [
+                                        "iam:GetRole",
+                                        "iam:PassRole"
+                                    ],
+                                    "Resource": "arn:aws:iam:::role/ComprehendAsyncJobs"
+                                }
+                            ]
+                        }
+                    }
+                ]
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "dc714864-06f5-4ce5-bcb9-b5a6cd579bb6"
+                }
+            }
+        }
+    },
+    "Metadata": {
+        "AWS::CloudFormation::Designer": {
+            "f7fd1310-8ca9-4f95-a008-ef4cafd9fc19": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 60,
+                    "y": 90
+                },
+                "z": 1,
+                "embeds": []
+            },
+            "88d6f1f6-ec2f-4a33-8a10-b53d863c58da": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 140,
+                    "y": 90
+                },
+                "z": 1,
+                "embeds": []
+            },
+            "dc714864-06f5-4ce5-bcb9-b5a6cd579bb6": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 140,
+                    "y": 160
+                },
+                "z": 0,
+                "embeds": []
+            }
+        }
+    },
+    "Outputs": {
+        "S3Bucket": {
+            "Value": {
+                "Fn::GetAtt": [
+                    "S3Bucket",
+                    "Arn"
+                ]
+            }
+        },
+        "AICrossAccountRole": {
+            "Value": {
+                "Fn::GetAtt": [
+                    "AICrossAccountRole",
+                    "Arn"
+                ]
+            }
+        },
+        "AIComprehendAsyncRole": {
+            "Value": {
+                "Fn::GetAtt": [
+                    "AIComprehendAsyncRole",
+                    "Arn"
+                ]
+            }
+        }
+    },
+    "Parameters": {
+        "AlfrescoAccountID": {
+            "Type": "String",
+            "Description": "Enter the AWS Account ID provided to you by Alfresco."
+        },
+        "AlfrescoExternalID": {
+            "Type": "String",
+            "Description": "Enter the External ID provided to you by Alfresco."
+        },
+        "BucketName": {
+            "Type": "String",
+            "Description": "Enter the name you would like for your bucket."
+        }
+    }
+}
